@@ -99,12 +99,13 @@ function appShell(body, title, sub) {
   const hash = parseHash().segs.join('/');
   const active = function (r) { return isActiveRoute(r, '/' + hash); };
   const unread = Store.unreadFor(u.id);
-  const side = '<aside class="sidebar" id="sidebar">' +
-    '<a class="brand" href="#/"><span class="brand-mark">' + ic('wrench') + '</span><span>HU<b>NAR</b></span></a>' +
+  const side = '<div class="scrim" onclick="A.closeSidebar()"></div>' +
+    '<aside class="sidebar" id="sidebar">' +
+    '<a class="brand" href="#/" onclick="A.closeSidebar()"><span class="brand-mark">' + ic('wrench') + '</span><span>HU<b>NAR</b></span></a>' +
     '<div class="side-sec">' + (me === 'customer' ? 'Customer' : 'Worker') + ' Portal</div>' +
     items.map(function (it) {
       const c = it.count ? it.count() : 0;
-      return '<div class="side-row' + (active(it.r) ? ' on' : '') + '" onclick="go(\'' + it.r + '\')">' + ic(it.icon, { s: 18 }) + '<span>' + it.label + '</span>' + (c ? '<span class="cnt">' + c + '</span>' : '') + '</div>';
+      return '<div class="side-row' + (active(it.r) ? ' on' : '') + '" onclick="A.menuGo(\'' + it.r + '\')">' + ic(it.icon, { s: 18 }) + '<span>' + it.label + '</span>' + (c ? '<span class="cnt">' + c + '</span>' : '') + '</div>';
     }).join('') +
     '<div class="side-sec">Account</div>' +
     '<div class="side-bottom">' +
@@ -256,10 +257,14 @@ window.addEventListener('DOMContentLoaded', function () {
 const A = {
   toggleSidebar: function () {
     document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar').parentElement.querySelector('.scrim').classList.toggle('show');
   },
   closeSidebar: function () {
     const el = document.getElementById('sidebar');
-    if (el) el.classList.remove('open');
+    if (!el) return;
+    el.classList.remove('open');
+    const scr = el.parentElement.querySelector('.scrim');
+    if (scr) scr.classList.remove('show');
   },
   accountMenu: function () {
     const root = document.getElementById('float-menu');
@@ -1004,7 +1009,7 @@ Views.services = function () {
   }).join('');
   const html = '<section class="section"><div class="content">' +
     '<div class="section-title">All services</div><div class="section-sub">Three-step transparency: an upfront visit charge, a negotiated repair price, and approval before work begins.</div>' +
-    '<div class="svc-grid" style="grid-template-columns:repeat(4,1fr)">' + grid + '</div>' +
+    '<div class="svc-grid">' + grid + '</div>' +
     '<div class="notice brand" style="margin-top:26px">' + ic('info') + '<span>Can’t find your service? <a href="#/register" style="text-decoration:underline">Post it anyway</a> and professionals will still respond to you.</span></div>' +
     '</div></section>';
   return { html: html };
@@ -1172,7 +1177,7 @@ Views.customerDashboard = function () {
   const html =
     '<button class="btn btn-primary btn-lg" style="width:100%;margin-bottom:20px" onclick="go(\'/customer/post\')">' + ic('plus', { s: 18 }) + ' Post a Job</button>' +
     statRow +
-    '<div class="grid-2col" style="margin-top:20px;grid-template-columns:1fr 360px">' +
+    '<div class="grid-2col" style="margin-top:20px">' +
     '<div class="stack"><div class="card card-h"><div><h3>Active Jobs</h3><p>Track every stage of your repairs</p></div><a class="btn btn-outline btn-sm" href="#/customer/jobs">View all</a></div>' + activeHtml + '</div>' +
     '<div class="stack"><div class="card card-h"><h3>Upcoming Visits</h3></div>' + visitsHtml +
     '<div class="card card-h"><h3>Recent Jobs</h3></div>' + recentHtml + '</div></div>';
@@ -2057,7 +2062,7 @@ Views.workerDashboard = function () {
   }).join('') : '<p class="smallnote" style="padding:8px 4px">When a customer selects you, the job moves here to be driven through inspection & repair.</p>';
 
   const html = stats +
-    '<div class="grid-2col" style="margin-top:20px;grid-template-columns:1fr 360px">' +
+    '<div class="grid-2col" style="margin-top:20px">' +
     '<div class="stack"><div class="card card-h"><div><h3>Nearby Jobs</h3><p>New requests from customers near you</p></div><a class="btn btn-outline btn-sm" href="#/worker/jobs">Browse all</a></div>' + nearbyHtml + '</div>' +
     '<div class="stack"><div class="card card-h"><h3>Active Jobs</h3></div>' + activeHtml +
     '<div class="card card-h"><h3>Quick stats</h3></div>' +
@@ -2384,7 +2389,7 @@ Views.workerEarnings = function () {
     return '<div style="flex:1;text-align:center"><div style="height:110px;display:flex;align-items:flex-end;justify-content:center"><div style="width:60%;background:var(--brand-grad);border-radius:6px 6px 0 0;height:' + h + 'px;min-width:18px" title="' + fmtRs(v) + '"></div></div><div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:6px">' + m.label + '</div></div>';
   }).join('') + '</div>';
 
-  const html = '<div class="stats" style="margin-bottom:18px;grid-template-columns:repeat(3,1fr)">' +
+  const html = '<div class="stats cols-3" style="margin-bottom:18px">' +
     '<div class="stat"><span class="si si-g">' + ic('wallet', { s: 22 }) + '</span><div><div class="sv">' + fmtRs(earn.total) + '</div><div class="sl">Total earnings</div></div></div>' +
     '<div class="stat"><span class="si si-t">' + ic('checkC', { s: 22 }) + '</span><div><div class="sv">' + (Store.statsForWorker().completed) + '</div><div class="sl">Jobs completed</div></div></div>' +
     '<div class="stat"><span class="si si-a">' + ic('star', { s: 22 }) + '</span><div><div class="sv">' + (Store.currentUser().rating || 'New') + '</div><div class="sl">Rating</div></div></div></div>' +
