@@ -115,7 +115,6 @@ const UI = {
     const m = {
       receiving_offers: ['Receiving Offers', 'b-amber', 'clock'],
       offers_received: ['Offers Received', 'b-amber', 'chat'],
-      visit_negotiation: ['Visit Negotiation', 'b-brand', 'chat'],
       visit_confirmed: ['Visit Confirmed', 'b-info', 'checkC'],
       on_the_way: ['On The Way', 'b-brand', 'truck'],
       arrived: ['Worker Arrived', 'b-brand', 'pin'],
@@ -147,7 +146,7 @@ const UI = {
     }
     const prog = {
       receiving_offers: 0, offers_received: 0,
-      visit_negotiation: 1, visit_confirmed: 2, on_the_way: 2, arrived: 3,
+      visit_confirmed: 2, on_the_way: 2, arrived: 3,
       inspection: 4, repair_negotiation: 5, repair_agreed: 5, repair_approved: 6,
       repair_in_progress: 7, completed: 8, paid: 9, reviewed: 10
     };

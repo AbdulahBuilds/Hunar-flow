@@ -208,7 +208,7 @@ function render() {
       workerDashboard: ['Worker Dashboard', 'Nearby jobs & your day'], workerOnboarding: ['Welcome, Worker', 'Set up your professional profile'],
       workerJob: ['Job Details', 'Customer request'], workerJobs: ['Nearby Jobs', 'New requests near you'],
       workerOffers: ['My Offers', 'Track your visit offers'],
-      workerOfferDetail: ['Negotiate Visit Charge', ''], workerVisits: ['Upcoming Visits', 'Confirmed appointments'],
+      workerOfferDetail: ['Offer Status', ''], workerVisits: ['Upcoming Visits', 'Confirmed appointments'],
       workerActive: ['Active Jobs', ''], workerActiveJob: ['Active Job', ''],
       workerCompleted: ['Completed Jobs', ''], workerEarnings: ['Earnings', 'Your income at a glance'],
       workerReviews: ['My Reviews', 'What customers say'], workerProfile: ['My Profile', 'Your professional profile'],
@@ -385,10 +385,10 @@ const A = {
       if (st === 2) {
         if (!d.title.trim()) { err('Please enter a problem title.'); return; }
       }
-      if (st === 4) {
+      if (st === 3) {
         if (!d.area) { err('Please select your location area.'); return; }
       }
-      if (st === 5) {
+      if (st === 4) {
         if (!d.prefDate) { err('Please pick a preferred visit date.'); return; }
         if (!d.prefTime && !d.flexible) { err('Please pick a preferred time or enable flexible timing.'); return; }
       }
@@ -398,7 +398,7 @@ const A = {
     prev: function () { const d = Store.draft(); if (!d) return; d.step = Math.max(1, d.step - 1); R(); },
     pick: function (k, v) { const d = Store.draft(); if (!d) return; d[k] = v; R(); },
     set: function (k, v) { const d = Store.draft(); if (!d) return; d[k] = v; },
-    pickService: function (name) { const d = Store.draft(); if (!d) return; d.category = name; R(); },
+    pickService: function (name) { const d = Store.draft(); if (!d) return; d.category = name; d.step = 2; R(); },
     addImages: function (files) {
       const d = Store.draft();
       Array.from(files).slice(0, 6 - d.images.length).forEach(function (f) {
@@ -527,36 +527,10 @@ const A = {
       onOk: function () {
         const res = Store.selectWorker(jobId, offerId);
         if (res.error) { UI.toast(res.error, 'danger', 'Cannot select'); return; }
-        UI.toast('Negotiation started with ' + w.name + '.', 'ok', 'Worker selected');
+        UI.toast('Visit charge of ' + fmtRs(of.amount) + ' locked with ' + w.name + '.', 'ok', 'Worker selected');
         go('/customer/jobs/' + jobId);
       }
     });
-  },
-  visitCounter: function (jobId) {
-    const inp = document.getElementById('vc-amount');
-    const note = document.getElementById('vc-note');
-    const val = parseInt(inp.value, 10);
-    if (!val || val < 50) { UI.toast('Please enter a valid visit charge (min Rs. 50).', 'danger', 'Invalid amount'); inp.classList.add('err'); setTimeout(function () { inp.classList.remove('err'); }, 2000); return; }
-    const res = Store.visitOffer(jobId, 'customer', val, note ? note.value : '');
-    if (res.error) UI.toast(res.error, 'danger', 'Error');
-    R();
-  },
-  acceptVisit: function (jobId) {
-    Store.acceptLastVisit(jobId, 'customer');
-    R();
-  },
-  workerVisitCounter: function (jobId) {
-    const inp = document.getElementById('vcf-amount');
-    const note = document.getElementById('vcf-note');
-    const val = parseInt(inp.value, 10);
-    if (!val || val < 50) { UI.toast('Please enter a valid visit charge.', 'danger', 'Invalid amount'); return; }
-    const res = Store.visitOffer(jobId, 'worker', val, note ? note.value : '');
-    if (res.error) UI.toast(res.error, 'danger', 'Error');
-    R();
-  },
-  workerAcceptVisit: function (jobId) {
-    Store.acceptLastVisit(jobId, 'worker');
-    R();
   },
   cancelVisit: function (jobId, who) {
     UI.confirm({
@@ -571,35 +545,14 @@ const A = {
     });
   },
 
-  repairCounter: function (jobId) {
-    const inp = document.getElementById('rc-amount');
-    const val = parseInt(inp.value, 10);
-    if (!val || val < 50) { UI.toast('Please enter a valid repair amount.', 'danger', 'Invalid amount'); return; }
-    Store.customerRepair(jobId, 'offer', val);
-    R();
-  },
   approveRepairAmount: function (jobId) {
-    Store.customerRepair(jobId, 'approve');
+    const res = Store.customerApproveRepair(jobId);
+    if (res.error) UI.toast(res.error, 'danger', 'Error');
     R();
   },
   approveRepairFinal: function (jobId) {
     const res = Store.customerApproveRepair(jobId);
     if (res.error) UI.toast(res.error, 'danger', 'Error');
-    R();
-  },
-  workerRepairAccept: function (jobId) {
-    Store.workerRepair(jobId, 'accept');
-    R();
-  },
-  workerRepairCounter: function (jobId) {
-    const inp = document.getElementById('rci-amount');
-    const val = parseInt(inp.value, 10);
-    if (!val || val < 50) { UI.toast('Please enter a valid repair amount.', 'danger', 'Invalid amount'); return; }
-    Store.workerRepair(jobId, 'offer', val);
-    R();
-  },
-  workerRepairReject: function (jobId) {
-    Store.workerRepair(jobId, 'reject');
     R();
   },
   rejectFinalQuote: function (jobId) {
@@ -812,7 +765,7 @@ const A = {
     if (!est || est < 50) { UI.toast('Please enter your estimated repair price (min Rs. 50).', 'danger', 'Invalid estimate'); estInp.classList.add('err'); setTimeout(function () { estInp.classList.remove('err'); }, 2000); return; }
     if (j.selectedOffer && j.selectedOffer.workerId !== u.id) { UI.toast('Another worker was already selected for this job.', 'danger', 'Job taken'); go('/worker/jobs'); return; }
     if (j.offers.some(function (o) { return o.workerId === u.id; })) { UI.toast('You already sent an offer for this job.', 'danger', 'Duplicate offer'); go('/worker/offers/' + jobId); return; }
-    if (['visit_negotiation', 'visit_confirmed', 'on_the_way', 'arrived', 'inspection', 'repair_negotiation', 'repair_agreed', 'repair_approved', 'repair_in_progress', 'completed', 'paid', 'reviewed', 'cancelled'].indexOf(j.status) !== -1) { UI.toast('This job is no longer accepting offers.', 'danger', 'Closed'); go('/worker/jobs'); return; }
+    if (['visit_confirmed', 'on_the_way', 'arrived', 'inspection', 'repair_negotiation', 'repair_agreed', 'repair_approved', 'repair_in_progress', 'completed', 'paid', 'reviewed', 'cancelled'].indexOf(j.status) !== -1) { UI.toast('This job is no longer accepting offers.', 'danger', 'Closed'); go('/worker/jobs'); return; }
     j.offers.push({ id: uid('of'), workerId: u.id, amount: val, estimate: est, at: Date.now(), status: 'sent' });
     j.status = 'offers_received';
     Store.notify(j.customerId, 'chat', u.name + ' sent you an offer', 'Visit charge ' + fmtRs(val) + ' · repair estimate ' + fmtRs(est) + ' for your ' + j.category + ' job.', '/customer/jobs/' + j.id);
@@ -946,7 +899,7 @@ Views.landing = function () {
 
   const steps = [
     ['Post your problem', 'Tell us what needs fixing with photos, voice and your location.'], ['Receive offers', 'Nearby professionals send you visit charges. Compare profiles & reviews.'],
-    ['Negotiate & confirm', 'Agree the visit charge and repair price before any work starts.'], ['Get it fixed & pay', 'Track the visit, approve the repair, pay securely and review.']
+    ['Pick your worker', 'Choose the best offer — the visit charge is locked the moment you select.'], ['Get it fixed & pay', 'Track the visit, approve the repair, pay securely and review.']
   ].map(function (s, i) {
     return '<div class="step"><div class="step-num">' + (i + 1) + '</div><h4>' + s[0] + '</h4><p>' + s[1] + '</p></div>';
   }).join('');
@@ -972,7 +925,7 @@ Views.landing = function () {
     '<div class="phone-card"><div class="pc-top">' + UI.avatar({ name: 'Ali', color: '#0e7a6e', verified: true }) + '<div><div style="font-weight:700">Ali Khan</div><div style="color:var(--muted)">AC Technician</div></div><div class="rating" style="margin-left:auto">' + UI.stars(4.9, 13) + '</div></div>' +
     '<div style="display:flex;gap:10px;align-items:center"><div class="voice-chip" style="margin:0">' + ic('mic', { s: 12 }) + ' Voice note</div><span class="badge b-ok">' + ic('check', { s: 11 }) + ' Approved</span></div><div class="kv" style="border-bottom:none;padding:6px 0 0"><span class="k">Visit charge</span><span class="v">Rs. 300</span></div></div>' +
     '</div>' +
-    '<div class="float-chip fc-1"><span class="dot"></span> Ali accepted<br>your counter offer</div>' +
+    '<div class="float-chip fc-1"><span class="dot"></span> Ali accepted<br>your job · Rs. 300</div>' +
     '<div class="float-chip fc-2">' + ic('wallet', { s: 16, style: 'color:var(--ok)' }) + ' Payment received Rs. 935</div>' +
     '</div></div></section>';
 
@@ -1100,7 +1053,7 @@ Views.register = function () {
     '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px"><span class="brand-mark" style="width:46px;height:46px;border-radius:13px">' + ic('wrench', { s: 22 }) + '</span><div><div style="font-size:20px;font-weight:800">Create your account</div><div style="color:var(--muted);font-size:13px">Join 1,200+ professionals and thousands of customers</div></div></div>' +
     '<div id="rg-err"></div>' +
     '<div style="font-size:13px;font-weight:650;color:var(--ink-2);margin-bottom:8px">I want to join as</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">' +
+    '<div class="role-grid">' +
     roleCard('customer', 'user', 'Customer', 'I need a service done', false) +
     roleCard('worker', 'briefcase', 'Worker', 'I provide services', true) + '</div>' +
     '<div class="f-row">' +
@@ -1189,7 +1142,7 @@ Views.customerMyJobs = function () {
   const u = Store.currentUser();
   const all = Store.state().jobs.filter(function (j) { return j.customerId === u.id; });
   const grouped = [];
-  const ordered = ['receiving_offers', 'offers_received', 'visit_negotiation', 'visit_confirmed', 'on_the_way', 'arrived', 'inspection', 'repair_negotiation', 'repair_agreed', 'repair_approved', 'repair_in_progress', 'completed', 'paid', 'reviewed', 'cancelled'];
+  const ordered = ['receiving_offers', 'offers_received', 'visit_confirmed', 'on_the_way', 'arrived', 'inspection', 'repair_negotiation', 'repair_agreed', 'repair_approved', 'repair_in_progress', 'completed', 'paid', 'reviewed', 'cancelled'];
   ordered.forEach(function (st) {
     all.filter(function (j) { return j.status === st; }).forEach(function (j) { grouped.push(j); });
   });
@@ -1361,14 +1314,14 @@ Views.wizard = function () {
     d = Store.draft();
   }
   const st = d.step;
-  const steps = ['Service', 'Problem', 'Media', 'Location', 'Visit', 'Review'];
+  const steps = ['Service', 'Problem & Media', 'Location', 'Visit', 'Review'];
   const stepper = '<div class="stepper">' + steps.map(function (s, i) {
     const n = i + 1;
     const cls = n < st ? 'done' : n === st ? 'active' : '';
     return '<div class="stp ' + cls + '"><span class="tick">' + (n < st ? ic('check', { s: 15 }) : n) + '</span><span class="sl">' + s + '</span></div>';
   }).join('') + '</div>';
 
-  const svcStep = '<div class="grid-3" style="grid-template-columns:repeat(2,1fr)">' + SERVICES.map(function (s) {
+  const svcStep = '<div class="wiz-svc-step">' + SERVICES.map(function (s) {
     return '<button class="svc-card" style="' + (d.category === s.name ? 'border-color:var(--brand);background:var(--brand-3);box-shadow:0 0 0 3px rgba(14,122,110,.15)' : '') + '" onclick="A.wiz.pickService(\'' + s.name + '\')"><span class="svc-icon" style="background:' + s.bg + ';color:' + s.css + '">' + ic(s.icon, { s: 22 }) + '</span><span><h4>' + s.name + '</h4><p>' + s.desc + '</p></span></button>';
   }).join('') + '</div>';
 
@@ -1376,20 +1329,20 @@ Views.wizard = function () {
     '<input class="input" placeholder="e.g. AC is running but not cooling" value="' + UI.esc(d.title) + '" oninput="A.wiz.set(\'title\', this.value)" />' +
     '<div class="fhint">Short & specific — professionals scan titles first.</div></div>' +
     '<div class="field"><label>Detailed description</label>' +
-    '<textarea class="textarea" placeholder="Add details: when it started, sounds, what you have already tried…" oninput="A.wiz.set(\'description\', this.value)">' + UI.esc(d.description) + '</textarea></div>';
-
-  const mediaStep =
-    '<label class="upload-zone" style="display:block"><div style="display:flex;flex-direction:column;align-items:center;gap:6px">' + ic('camera', { s: 26 }) + '<b>Add photos</b><span style="font-size:12.5px">Capture or upload images of the problem (JPG, PNG)</span></div>' +
+    '<textarea class="textarea" placeholder="Add details: when it started, sounds, what you have already tried…" oninput="A.wiz.set(\'description\', this.value)">' + UI.esc(d.description) + '</textarea></div>' +
+    '<div class="divide"></div>' +
+    '<div style="display:flex;gap:14px;align-items:stretch;flex-wrap:wrap">' +
+    '<label class="upload-zone" style="display:block;flex:1;min-width:200px;padding:18px"><div style="display:flex;flex-direction:column;align-items:center;gap:6px">' + ic('camera', { s: 22 }) + '<b>Add photos</b><span style="font-size:12px">Capture or upload images (JPG, PNG)</span></div>' +
     '<input type="file" accept="image/*" multiple style="display:none" onchange="A.wiz.addImages(this.files)" /></label>' +
+    '<div style="flex:1;min-width:200px;display:flex;flex-direction:column;justify-content:center"><label style="font-weight:650;font-size:13px;color:var(--ink-2)">Voice description</label>' +
+    (d.audio
+      ? voicePreviewHtml(d.audio)
+      : '<div class="drop-pill" style="margin-top:8px" onclick="A.wiz.rec()">' + ic('mic', { s: 15 }) + ' Record Voice</div>') + '</div>' +
+    '</div>' +
     (d.images.length ? '<div class="grid-3" style="margin-top:12px">' + d.images.map(function (im, i) {
       return '<div class="img-thumb"><img src="' + im + '" /><button class="img-del" onclick="A.wiz.delImage(' + i + ')">' + ic('trash', { s: 13 }) + '</button></div>';
     }).join('') + (d.images.length < 6 ? '<label class="img-add"><input type="file" accept="image/*" style="display:none" onchange="A.wiz.addImages(this.files)" />' + ic('plus') + '<span>Add more</span></label>' : '') + '</div>' : '') +
-    (d.images.length ? '<div class="fhint" style="margin-top:8px">' + d.images.length + ' photo' + (d.images.length > 1 ? 's' : '') + ' added' + '</div>' : '') +
-    '<div class="divide"></div>' +
-    '<div><label style="font-weight:650;font-size:13px;color:var(--ink-2)">Voice description</label>' +
-    (d.audio
-      ? voicePreviewHtml(d.audio)
-      : '<div class="drop-pill" style="margin-top:10px" onclick="A.wiz.rec()">' + ic('mic', { s: 15 }) + ' Record Voice</div>') + '</div>';
+    (d.images.length ? '<div class="fhint" style="margin-top:8px">' + d.images.length + ' photo' + (d.images.length > 1 ? 's' : '') + ' added' + '</div>' : '');
 
   function voicePreviewHtml(a) {
     return '<div class="rec-box"><div class="wave-box">' +
@@ -1450,14 +1403,14 @@ Views.wizard = function () {
     (d.images.length ? '<div class="jc-imgs" style="margin-top:12px">' + d.images.slice(0, 4).map(function (x) { return '<img class="thumb" src="' + x + '" />'; }).join('') + '</div>' : '') +
     (d.audio ? '<div style="margin-top:12px">' + voicePreviewHtml(d.audio) + '</div>' : '');
 
-  const contentHtml = st === 1 ? svcStep : st === 2 ? problemStep : st === 3 ? mediaStep : st === 4 ? mapStep : st === 5 ? visitStep : reviewStep;
+  const contentHtml = st === 1 ? svcStep : st === 2 ? problemStep : st === 3 ? mapStep : st === 4 ? visitStep : reviewStep;
 
   const navHtml = '<div class="wiz-nav">' +
     (st > 1 ? '<button class="btn btn-outline" onclick="A.wiz.prev()">' + ic('arrowL', { s: 15 }) + ' Back</button>' : '<span></span>') +
-    (st < 6 ? '<button class="btn btn-primary" onclick="A.wiz.next()">Continue ' + ic('arrowR', { s: 15 }) + '</button>' :
+    (st < 5 ? '<button class="btn btn-primary" onclick="A.wiz.next()">Continue ' + ic('arrowR', { s: 15 }) + '</button>' :
       '<button class="btn btn-primary btn-lg" onclick="A.wiz.submit()">' + ic('send', { s: 16 }) + ' Post Job</button>') + '</div>';
 
-  const html = '<div class="card wiz-card"><div class="card-pad">' + stepper + '<div id="wiz-body">' + contentHtml + '</div>' + navHtml + '</div></div>';
+  const html = '<div class="card wiz-card"><div class="card-pad"><div class="wiz-wrap">' + stepper + '<div class="wiz-main"><div id="wiz-body">' + contentHtml + '</div>' + navHtml + '</div></div></div></div>';
 
   return { html: html, mount: function () {
       const area = document.getElementById('wiz-area');
@@ -1495,9 +1448,6 @@ Views.customerJob = function (params) {
     }
   }
 
-  else if (j.status === 'visit_negotiation') {
-    panel = visitNegotiateCard(j, 'customer');
-  }
   else if (j.status === 'visit_confirmed' || j.status === 'on_the_way' || j.status === 'arrived' || j.status === 'inspection') {
     panel = visitConfirmedCard(j);
   }
@@ -1539,7 +1489,6 @@ Views.customerJob = function (params) {
 
   const html = '<div class="grid-2col"><div class="main-col stack">' +
     (j.cancelled ? '<div class="err-banner">' + ic('alert') + '<span>This job was cancelled — ' + UI.esc(j.cancelled.reason || '') + '</span></div>' : '') +
-    (sec === 'negotiate' ? '<div class="notice brand">' + ic('chat') + '<span>Visit charge negotiation — both sides see this thread live.</span></div>' : '') +
     (sec === 'repair' ? '<div class="notice brand">' + ic('wrench') + '<span>Repair price negotiation — agree before approving any work.</span></div>' : '') +
     (sec === 'payment' ? '' : '') +
     panel +
@@ -1551,53 +1500,6 @@ Views.customerJob = function (params) {
       if (sec === 'offers') { Store.markOffersViewed(j.id); }
     } };
 };
-
-function visitNegotiateCard(j, side) {
-  const thread = j.visitThread;
-  const w = Store.userById(j.workerId);
-  const last = thread[thread.length - 1];
-  const mySide = side;
-  const custName = j.customerId ? (function () { const c = Store.userById(j.customerId); return c ? c.name : 'Customer'; })() : 'Customer';
-  let items = thread.map(function (it, i) {
-    const mine = it.side === mySide;
-    const sender = it.side === 'worker' ? (w ? w.name : 'Worker') : custName;
-    return '<div class="msg ' + (mine ? 'mine' : 'other') + '"><div class="m-cap">' + UI.esc(sender) + ' · ' + it.side + '</div>Visit charge <span class="m-rs">' + fmtRs(it.amount) + '</span>' +
-      (it.note ? '<div class="m-note">' + UI.esc(it.note) + '</div>' : '') +
-      '<div class="m-tm">' + new Date(it.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '</div></div>';
-  }).join('');
-  let agreeBanner = '';
-  if (j.status !== 'visit_negotiation') {
-    if (j.cancelled) agreeBanner = '<div class="msg agree">' + ic('x', { s: 15 }) + ' Visit cancelled' + '</div>';
-    else agreeBanner = '<div class="msg agree">' + ic('check', { s: 15 }) + ' Visit charge agreed at <span class="m-rs">' + fmtRs(j.visitCharge) + '</span></div>';
-  }
-  const lastOpp = (function () { for (let i = thread.length - 1; i >= 0; i--) if (thread[i].side !== mySide) return thread[i]; return null; })();
-  const otherName = w ? w.name : 'worker';
-  const estRow = j.selectedOffer && j.selectedOffer.estimate ? '<div class="kv" style="border-bottom:none"><span class="k">Offered repair estimate</span><span class="v">' + fmtRs(j.selectedOffer.estimate) + '</span></div>' : '';
-  let inputHtml = '';
-  if (j.status === 'visit_negotiation') {
-    if (side === 'customer') {
-      inputHtml = '<div class="card card-pad" style="margin-top:14px">' +
-        estRow +
-        (lastOpp ? '<div class="kv"><span class="k">' + UI.esc(otherName) + ' asks</span><span class="v">' + fmtRs(lastOpp.amount) + '</span></div>' : '') +
-        '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="A.acceptVisit(\'' + j.id + '\')">' + ic('check', { s: 15 }) + ' Accept ' + (lastOpp ? fmtRs(lastOpp.amount) : 'offer') + '</button>' +
-        '<div class="divide"></div><label style="font-weight:650;font-size:13px;color:var(--ink-2)">Make a counter offer</label>' +
-        '<div style="display:flex;gap:8px;margin-top:8px"><input type="number" id="vc-amount" class="input" placeholder="e.g. 275" min="50" /><button class="btn btn-soft" onclick="A.visitCounter(\'' + j.id + '\')">Send</button></div>' +
-        '<input type="text" id="vc-note" class="input" style="margin-top:8px" placeholder="Message (optional)…" />' +
-        '<div class="fhint">Agreeing a matched amount from both sides confirms the visit.</div></div>';
-    } else {
-      inputHtml = '<div class="card card-pad" style="margin-top:14px">' +
-        estRow +
-        (lastOpp ? '<div class="kv"><span class="k">Customer offers</span><span class="v">' + fmtRs(lastOpp.amount) + '</span></div>' : '') +
-        '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="A.workerAcceptVisit(\'' + j.id + '\')">' + ic('check', { s: 15 }) + ' Accept ' + (lastOpp ? fmtRs(lastOpp.amount) : 'offer') + '</button>' +
-        '<div class="divide"></div><label style="font-weight:650;font-size:13px;color:var(--ink-2)">Counter offer</label>' +
-        '<div style="display:flex;gap:8px;margin-top:8px"><input type="number" id="vcf-amount" class="input" placeholder="e.g. 300" min="50" /><button class="btn btn-soft" onclick="A.workerVisitCounter(\'' + j.id + '\')">Send</button></div>' +
-        '<input type="text" id="vcf-note" class="input" style="margin-top:8px" placeholder="Message (optional)…" />' +
-        '<div class="fhint">The customer sees your message and counter in real time.</div></div>';
-    }
-  }
-  return '<div class="card"><div class="card-h"><div><h3>Negotiation Chat</h3><p>' + UI.esc(w ? w.name : 'Worker') + ' · live thread</p></div>' + UI.statusBadge(j.status) + '</div>' +
-    '<div class="card-pad"><div class="chat-flow">' + items + agreeBanner + '</div>' + inputHtml + '</div></div>';
-}
 
 function offerBreakdownHtml(o) {
   if (!o) return '';
@@ -1651,7 +1553,7 @@ function extraRow(ex, side, jobId) {
 function extraWorkCard(j, side) {
   const extras = j.extras || [];
   const isCust = side === 'customer';
-  const active = ['visit_negotiation', 'visit_confirmed', 'on_the_way', 'arrived', 'inspection', 'repair_negotiation', 'repair_agreed', 'repair_approved', 'repair_in_progress'].indexOf(j.status) !== -1;
+  const active = ['visit_confirmed', 'on_the_way', 'arrived', 'inspection', 'repair_negotiation', 'repair_agreed', 'repair_approved', 'repair_in_progress'].indexOf(j.status) !== -1;
   if (side === 'worker' && !extras.length) return '';
   if (isCust && !extras.length && !(active && j.workerId)) return '';
   const rows = extras.map(function (ex) { return extraRow(ex, side, j.id); }).join('');
@@ -1751,31 +1653,23 @@ function visitConfirmedCard(j) {
 function inspectionCard(j) {
   const w = Store.userById(j.workerId);
   const r = j.repair;
-  const thread = r.thread || [];
-  const lastOn = thread.filter(function (x) { return x.side === 'worker'; }).pop();
-  const lastCust = thread.filter(function (x) { return x.side === 'customer'; }).pop();
+  const offerEst = j.selectedOffer && j.selectedOffer.estimate ? j.selectedOffer.estimate : 0;
   const agreed = j.status === 'repair_agreed';
-  let threadHtml = thread.map(function (it, i) {
-    const mine = it.side === 'customer';
-    return '<div class="msg ' + (mine ? 'mine' : 'other') + '"><div class="m-cap">' + (it.side === 'worker' ? w.name + ' · worker' : 'customer') + '</div>Repair price <span class="m-rs">' + fmtRs(it.amount) + '</span></div>';
-  }).join('');
-  if (agreed) threadHtml += '<div class="msg agree">' + ic('check', { s: 15 }) + ' <b>Repair price agreed</b> ' + fmtRs(r.approvedEstimate) + '</div>';
 
   let actionHtml = '';
   if (!agreed) {
-    const lastWorkerAmount = lastOn ? lastOn.amount : r.estimate;
-    const offerEst = j.selectedOffer && j.selectedOffer.estimate ? j.selectedOffer.estimate : 0;
     actionHtml = '<div class="card card-pad" style="margin-top:14px">' +
       '<div class="kv"><span class="k">Inspection result</span><span class="v" style="text-align:left">' + UI.esc(r.result) + '</span></div>' +
       '<div class="kv"><span class="k">Required repair</span><span class="v" style="text-align:left">' + UI.esc(r.required) + '</span></div>' +
       '<div class="kv" style="border-bottom:none"><span class="k">Final Repair Quote</span><span class="v" style="color:var(--brand);font-size:17px;font-weight:800">' + fmtRs(r.estimate) + '</span></div>' +
       (offerEst ? '<div class="notice brand" style="margin-top:12px">' + ic('info') + '<span>This is the <b>final</b> quote after inspecting your ' + UI.esc(j.category.toLowerCase()) + ' — it may differ from the offer estimate of ' + fmtRs(offerEst) + '. Approve to start the repair, or reject and the job ends.</span></div>' : '') +
-      '<div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:14px;align-items:center">' +
+      '<div class="divide"></div>' +
+      '<div class="kv" style="border-bottom:none"><span class="k">Visit charge</span><span class="v">' + fmtRs(j.visitCharge) + '</span></div>' +
+      extraBillingRows(j) +
+      '<div class="kv" style="border-bottom:none"><span class="k">Total</span><span class="v" style="font-size:17px;color:var(--brand)">' + fmtRs(Store.jobTotal(j.id)) + '</span></div>' +
+      '<div class="btn-pair" style="margin-top:14px">' +
       '<button class="btn btn-primary" onclick="A.approveRepairAmount(\'' + j.id + '\')">' + ic('check', { s: 15 }) + ' Approve ' + fmtRs(r.estimate) + '</button>' +
-      '<button class="btn btn-outline" onclick="document.getElementById(\'rc-row\').style.display=\'flex\'">Negotiate</button></div>' +
-      '<div id="rc-row" style="display:none;gap:8px;margin-top:10px"><input type="number" id="rc-amount" class="input" placeholder="Your offer, e.g. 600" min="50" />' +
-      '<button class="btn btn-soft" onclick="A.repairCounter(\'' + j.id + '\')">Send</button></div>' +
-      '<button class="btn btn-danger-solid btn-block" style="margin-top:10px" onclick="A.rejectFinalQuote(\'' + j.id + '\')">Reject final quote · end this job</button>' +
+      '<button class="btn btn-danger-solid" onclick="A.rejectFinalQuote(\'' + j.id + '\')">' + ic('x', { s: 15 }) + ' Reject</button></div>' +
       '<div class="fhint" style="margin-top:8px">Your total will be visit charge + approved final quote.</div></div>';
   } else {
     actionHtml = '<div class="card card-pad" style="margin-top:14px;border-color:#bfe6cd">' +
@@ -1787,7 +1681,7 @@ function inspectionCard(j) {
       '<div class="fhint" style="text-align:center;margin-top:8px">Approve to lock this price and start the repair.</div></div>';
   }
   return '<div class="card"><div class="card-h"><h3>Inspection Complete</h3>' + UI.statusBadge(j.status) + '</div>' +
-    '<div class="card-pad"><div class="chat-flow">' + threadHtml + '</div>' + actionHtml + '</div></div>';
+    '<div class="card-pad">' + actionHtml + '</div></div>';
 }
 
 function approvedCard(j) {
@@ -1993,7 +1887,7 @@ Views.workerOnboarding = function () {
   const nav = '<div class="wiz-nav">' + (d.step > 1 ? '<button class="btn btn-outline" onclick="A.onb.prev()">' + ic('arrowL', { s: 15 }) + ' Back</button>' : '<span></span>') +
     (d.step < 6 ? '<button class="btn btn-primary" onclick="A.onb.next()">Continue ' + ic('arrowR', { s: 15 }) + '</button>' : '<button class="btn btn-primary btn-lg" onclick="A.onb.finish()">' + ic('shield', { s: 16 }) + ' Finish & Start Working</button>') + '</div>';
 
-  const html = '<div class="card wiz-card"><div class="card-pad">' + stepper + '<div style="font-size:17px;font-weight:800;margin-bottom:14px">' + steps[d.step - 1] + '</div>' + body + nav + '</div></div>';
+  const html = '<div class="card wiz-card"><div class="card-pad"><div class="wiz-wrap">' + stepper + '<div class="wiz-main"><div style="font-size:17px;font-weight:800;margin-bottom:14px">' + steps[d.step - 1] + '</div>' + body + nav + '</div></div></div></div>';
   return { html: html };
 };
 
@@ -2129,7 +2023,6 @@ Views.workerJob = function (params) {
   if (!j) return { html: UI.empty('alert', 'Job not found', '') + '<a class="btn btn-primary" href="#/worker">Back</a>' };
   const myOffer = j.offers.find(function (o) { return o.workerId === u.id; });
   if (myOffer && j.selectedOffer && j.selectedOffer.workerId === u.id) {
-    if (j.status === 'visit_negotiation') { go('/worker/offers/' + j.id); return { html: '' }; }
     if (['visit_confirmed', 'on_the_way', 'arrived', 'inspection', 'repair_negotiation', 'repair_agreed', 'repair_approved', 'repair_in_progress', 'completed'].indexOf(j.status) !== -1) { go('/worker/active/' + j.id); return { html: '' }; }
   }
   const cust = Store.userById(j.customerId);
@@ -2192,7 +2085,6 @@ Views.workerOffers = function () {
       UI.jobMetaRow(j) +
       '<div style="display:flex;gap:8px;align-items:center;margin-top:8px"><span class="smallnote">My offer: </span><b>' + fmtRs(of.amount) + '</b>' +
       (of.estimate ? '<span class="smallnote">' + ic('tag', { s: 12 }) + ' est. ' + fmtRs(of.estimate) + '</span>' : '') +
-      (j.status === 'visit_negotiation' && j.workerId === u.id ? '<span class="badge b-brand">' + ic('chat', { s: 12 }) + ' Customer negotiating</span>' : '') +
       '<span style="margin-left:auto">' + st.label + '</span></div></div></div>';
   }).join('') + '</div>' : UI.empty('send', 'No offers sent yet', 'Browse nearby jobs and send a visit offer to get started.', '<a class="btn btn-primary" href="#/worker/jobs">Browse Nearby Jobs</a>');
   return { html: html };
@@ -2201,10 +2093,8 @@ Views.workerOffers = function () {
 function offerStatus(j, of) {
   if (!of) return { badge: UI.statusBadge(j.status), label: '' };
   if (j.selectedOffer && j.selectedOffer.id === of.id) {
-    if (j.status === 'visit_negotiation') return { badge: '<span class="badge b-brand">' + ic('chat', { s: 12 }) + ' Negotiating</span>', label: 'Customer opened negotiation' };
     if (j.status === 'visit_confirmed' || j.status === 'on_the_way' || j.status === 'arrived' || j.status === 'inspection' || j.status === 'repair_negotiation' || j.status === 'repair_agreed' || j.status === 'repair_approved' || j.status === 'repair_in_progress' || j.status === 'completed') return { badge: '<span class="badge b-ok">' + ic('checkC', { s: 12 }) + ' Accepted</span>', label: 'Visit confirmed' };
   }
-  if (j.status === 'visit_negotiation' && j.workerId !== u2id()) return { badge: '<span class="badge b-muted">Rejected</span>', label: 'Customer selected another worker' };
   if (j.selectedOffer && j.selectedOffer.id !== of.id) return { badge: '<span class="badge b-danger">' + ic('x', { s: 12 }) + ' Rejected</span>', label: 'Customer selected another worker' };
   if (of.status === 'rejected') return { badge: '<span class="badge b-danger">' + ic('x', { s: 12 }) + ' Rejected</span>', label: '' };
   if (of.status === 'viewed') return { badge: '<span class="badge b-info">' + ic('eye', { s: 12 }) + ' Customer viewing</span>', label: 'Customer opened your offer' };
@@ -2217,9 +2107,6 @@ Views.workerOfferDetail = function (params) {
   const u = Store.currentUser();
   if (!j || !j.offers.some(function (o) { return o.workerId === u.id; })) {
     return { html: UI.empty('alert', 'Offer not found', '') + '<a class="btn btn-primary" href="#/worker/offers">Back to offers</a>' };
-  }
-  if (j.selectedOffer && j.selectedOffer.workerId === u.id && j.status === 'visit_negotiation') {
-    return { html: visitNegotiateCard(j, 'worker') + '<a class="btn btn-ghost" href="#/worker/offers">' + ic('arrowL', { s: 15 }) + ' Back to my offers</a>' };
   }
   const of = j.offers.find(function (o) { return o.workerId === u.id; });
   const st = offerStatus(j, of);
@@ -2293,27 +2180,15 @@ Views.workerActiveJob = function (params) {
   }
   else if (j.status === 'repair_negotiation' || j.status === 'repair_agreed') {
     const r = j.repair;
-    let threadHtml = r.thread.map(function (it, i) {
-      const mine = it.side === 'worker';
-      return '<div class="msg ' + (mine ? 'mine' : 'other') + '"><div class="m-cap">' + (it.side === 'worker' ? 'you' : 'customer') + '</div>Repair price <span class="m-rs">' + fmtRs(it.amount) + '</span></div>';
-    }).join('');
-    const lastCust = (function () { for (let i = r.thread.length - 1; i >= 0; i--) if (r.thread[i].side === 'customer') return r.thread[i]; return null; })();
-    let action = '';
-    if (j.status === 'repair_agreed') {
-      threadHtml += '<div class="msg agree">' + ic('check', { s: 15 }) + ' <b>Repair price agreed</b> — waiting for customer approval</div>';
-      action = '<div class="notice amber">' + ic('clock') + '<span>Waiting for the customer to approve the agreed repair price. You’ll be able to start instantly after approval.</span></div>';
-    } else if (r.workerRejected) {
-      action = '<div class="notice amber">' + ic('info') + '<span>You declined this price. Waiting for a new counter offer from the customer.</span></div>';
-    } else {
-      action = '<div class="card card-pad" style="margin-top:14px">' +
-        (lastCust ? '<div class="kv"><span class="k">Customer offers</span><span class="v">' + fmtRs(lastCust.amount) + '</span></div>' : '') +
-        (lastCust ? '<button class="btn btn-primary btn-block" style="margin-top:10px" onclick="A.workerRepairAccept(\'' + j.id + '\')">' + ic('check', { s: 15 }) + ' Accept ' + fmtRs(lastCust.amount) + '</button>' : '') +
-        '<div class="divide"></div>' +
-        '<label style="font-weight:650;font-size:13px;color:var(--ink-2)">Counter offer</label>' +
-        '<div style="display:flex;gap:8px;margin-top:8px"><input type="number" id="rci-amount" class="input" placeholder="e.g. 650" min="50" /><button class="btn btn-soft" onclick="A.workerRepairCounter(\'' + j.id + '\')">Send</button></div>' +
-        '<button class="btn btn-danger-solid btn-block" style="margin-top:10px" onclick="A.workerRepairReject(\'' + j.id + '\')">Reject price</button></div>';
-    }
-    panel = '<div class="card' + (isRepairMode ? '' : '') + '"><div class="card-h"><h3>Repair Negotiation</h3>' + UI.statusBadge(j.status) + '</div><div class="card-pad"><div class="chat-flow">' + threadHtml + '</div>' + action + '</div></div>';
+    panel = '<div class="card"><div class="card-h"><h3>' + (j.status === 'repair_agreed' ? 'Repair Agreed' : 'Quote Sent') + '</h3>' + UI.statusBadge(j.status) + '</div><div class="card-pad">' +
+      '<div class="notice brand">' + ic('search') + '<span><b>Inspection result:</b> ' + UI.esc(r.result) + '</span></div>' +
+      '<p style="color:var(--muted);font-size:13.5px;margin-bottom:14px">' + UI.esc(r.required) + '</p>' +
+      '<div class="kv"><span class="k">Visit charge</span><span class="v">' + fmtRs(j.visitCharge) + '</span></div>' +
+      '<div class="kv" style="border-bottom:none"><span class="k">Final Repair Quote</span><span class="v" style="color:var(--brand);font-size:17px;font-weight:800">' + fmtRs(r.estimate) + '</span></div>' +
+      (j.status === 'repair_agreed'
+        ? '<div class="notice amber" style="margin-top:14px">' + ic('clock') + '<span>Waiting for the customer to approve the final quote. You’ll be able to start instantly after approval.</span></div>'
+        : '<div class="notice amber" style="margin-top:14px">' + ic('clock') + '<span>Quote sent to the customer. They can approve to start the repair, or reject and the job ends.</span></div>') +
+      '</div></div>';
   }
   else if (j.status === 'repair_approved') {
     panel = '<div class="card"><div class="card-h"><h3>Approved — Ready to Repair</h3>' + UI.statusBadge(j.status) + '</div><div class="card-pad">' +
