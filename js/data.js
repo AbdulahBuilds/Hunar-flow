@@ -1,12 +1,12 @@
 const SERVICES = [
-  { id: 'ac', name: 'AC Repair', icon: 'snow', css: '#0e7a6e', bg: '#e6f5f2', count: 24, desc: 'Cooling, gas refill, capacitor, compressor issues' },
-  { id: 'plumbing', name: 'Plumbing', icon: 'drop', css: '#2563eb', bg: '#e8f0fe', count: 31, desc: 'Leaks, taps, pipes, water heaters, blocked drains' },
-  { id: 'electrician', name: 'Electrician', icon: 'zap', css: '#d97706', bg: '#fdf1dc', count: 28, desc: 'Wiring, switches, fixtures, short circuits, fans' },
-  { id: 'carpenter', name: 'Carpenter', icon: 'hammer', css: '#7c3aed', bg: '#f1ebfd', count: 16, desc: 'Doors, locks, furniture, shelves, wooden repairs' },
-  { id: 'appliance', name: 'Appliance Repair', icon: 'tv', css: '#db2777', bg: '#fde9f2', count: 19, desc: 'Fridge, washing machine, microwave, oven' },
-  { id: 'painter', name: 'Painter', icon: 'paint', css: '#ea580c', bg: '#fdeee2', count: 12, desc: 'Wall painting, touch-ups, waterproofing, texture' },
-  { id: 'cleaning', name: 'Cleaning', icon: 'sparkles', css: '#0891b2', bg: '#e0f4f8', count: 22, desc: 'Deep clean, sofa clean, kitchen, bathroom, windows' },
-  { id: 'other', name: 'Other', icon: 'toolbox', css: '#64748b', bg: '#eef1f4', count: 35, desc: 'Any other repair or home service you need' }
+  { id: 'ac', name: 'AC Repair', icon: 'snow', css: '#0f8b8d', bg: '#e6f7f7', count: 24, desc: 'Cooling, gas refill, capacitor, compressor issues' },
+  { id: 'plumbing', name: 'Plumbing', icon: 'drop', css: '#0f8b8d', bg: '#e6f7f7', count: 31, desc: 'Leaks, taps, pipes, water heaters, blocked drains' },
+  { id: 'electrician', name: 'Electrician', icon: 'zap', css: '#0f8b8d', bg: '#e6f7f7', count: 28, desc: 'Wiring, switches, fixtures, short circuits, fans' },
+  { id: 'carpenter', name: 'Carpenter', icon: 'hammer', css: '#0f8b8d', bg: '#e6f7f7', count: 16, desc: 'Doors, locks, furniture, shelves, wooden repairs' },
+  { id: 'appliance', name: 'Appliance Repair', icon: 'tv', css: '#0f8b8d', bg: '#e6f7f7', count: 19, desc: 'Fridge, washing machine, microwave, oven' },
+  { id: 'painter', name: 'Painter', icon: 'paint', css: '#0f8b8d', bg: '#e6f7f7', count: 12, desc: 'Wall painting, touch-ups, waterproofing, texture' },
+  { id: 'cleaning', name: 'Cleaning', icon: 'sparkles', css: '#0f8b8d', bg: '#e6f7f7', count: 22, desc: 'Deep clean, sofa clean, kitchen, bathroom, windows' },
+  { id: 'other', name: 'Other', icon: 'toolbox', css: '#0f8b8d', bg: '#e6f7f7', count: 35, desc: 'Any other repair or home service you need' }
 ];
 
 const SKILL_ALL = SERVICES.map(function (s) { return s.name; });
@@ -15,7 +15,7 @@ const AREAS = ['Clifton Block 4', 'Clifton Block 3', 'Gulshan-e-Iqbal', 'Bahadur
 
 const TIME_SLOTS = ['9:00 AM', '11:00 AM', '1:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM', '7:00 PM'];
 
-const AVATAR_COLORS = ['#0e7a6e', '#2563eb', '#d97706', '#7c3aed', '#db2777', '#0891b2', '#16a34a', '#c026d3', '#b91c1c', '#0f766e'];
+const AVATAR_COLORS = ['#0f8b8d', '#2563eb', '#d97706', '#7c3aed', '#db2777', '#0891b2', '#16a34a', '#c026d3', '#b91c1c', '#0f766e'];
 
 function avatarColor(id) {
   let h = 0;

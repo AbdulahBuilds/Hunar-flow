@@ -81,7 +81,7 @@ const UI = {
   avatar: function (u, size, opts) {
     opts = opts || {};
     const cls = size === 'lg' ? ' av-lg' : size === 'xl' ? ' av-xl' : '';
-    const col = u.color || '#0e7a6e';
+    const col = u.color || '#123b5d';
     const inner = u.avatar
       ? '<img src="' + UI.esc(u.avatar) + '" alt="" />'
       : UI.esc(initials(u.name));

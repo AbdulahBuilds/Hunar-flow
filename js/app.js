@@ -33,7 +33,8 @@ const NAV_ITEMS = {
     { icon: 'star', label: 'Reviews', r: '/customer/reviews' },
     { icon: 'bell', label: 'Notifications', r: '/customer/notifications', count: function () { const u = Store.currentUser(); return u ? Store.unreadFor(u.id) : 0; } },
     { icon: 'user', label: 'Profile', r: '/customer/profile' },
-    { icon: 'settings', label: 'Settings', r: '/customer/settings' }
+    { icon: 'settings', label: 'Settings', r: '/customer/settings' },
+    { icon: 'sparkles', label: 'Color Reference', r: '/colors' }
   ],
   worker: [
     { icon: 'home', label: 'Dashboard', r: '/worker' },
@@ -46,7 +47,8 @@ const NAV_ITEMS = {
     { icon: 'star', label: 'Reviews', r: '/worker/reviews' },
     { icon: 'bell', label: 'Notifications', r: '/worker/notifications', count: function () { const u = Store.currentUser(); return u ? Store.unreadFor(u.id) : 0; } },
     { icon: 'user', label: 'Profile', r: '/worker/profile' },
-    { icon: 'settings', label: 'Settings', r: '/worker/settings' }
+    { icon: 'settings', label: 'Settings', r: '/worker/settings' },
+    { icon: 'sparkles', label: 'Color Reference', r: '/colors' }
   ]
 };
 
@@ -87,7 +89,7 @@ function footerHtml() {
     '<div><a class="brand" href="#/"><span class="brand-mark">' + ic('wrench') + '</span><span>HU<b>NAR</b></span></a>' +
     '<p class="fb">HUNAR connects customers with nearby skilled workers. Post a problem, get offers, negotiate the price, and get it fixed — on your terms.</p></div>' +
     '<div><h5>Services</h5>' + SERVICES.slice(0, 5).map(function (s) { return '<a href="#/workers?skill=' + encodeURIComponent(s.name) + '">' + s.name + '</a>'; }).join('') + '</div>' +
-    '<div><h5>Company</h5><a href="#/">About HUNAR</a><a href="#/workers">Find a Professional</a><a href="#/register">Join as a Worker</a><a href="#/login">Login</a></div>' +
+    '<div><h5>Company</h5><a href="#/">About HUNAR</a><a href="#/workers">Find a Professional</a><a href="#/register">Join as a Worker</a><a href="#/colors">Color Reference</a><a href="#/login">Login</a></div>' +
     '<div><h5>Support</h5><a href="#/">Help Center</a><a href="#/">Safety</a><a href="#/">Contact Us</a><a href="#/">Terms & Privacy</a></div>' +
     '</div></footer>';
 }
@@ -139,6 +141,7 @@ function render() {
   if (segs.length === 0 || path === 'home') {
     view = u ? (u.role === 'worker' ? 'workerDashboard' : 'customerDashboard') : 'landing';
   } else if (segs[0] === 'services') view = 'services';
+  else if (segs[0] === 'colors') view = 'colors';
   else if (segs[0] === 'workers') {
     if (segs.length === 1) view = 'workers';
     else if (segs.length === 2) { view = 'workerPublic'; params.id = segs[1]; }
@@ -212,7 +215,8 @@ function render() {
       workerActive: ['Active Jobs', ''], workerActiveJob: ['Active Job', ''],
       workerCompleted: ['Completed Jobs', ''], workerEarnings: ['Earnings', 'Your income at a glance'],
       workerReviews: ['My Reviews', 'What customers say'], workerProfile: ['My Profile', 'Your professional profile'],
-      workerSettings: ['Settings', 'Preferences & account']
+      workerSettings: ['Settings', 'Preferences & account'],
+      colors: ['Color Reference', 'The HUNAR palette at a glance']
     };
     const mt = mapTitle[view] || [''];
     const sub = params.id && (view === 'customerJob' || view === 'workerJob' || view === 'workerOfferDetail' || view === 'workerActiveJob') ? 'Ref: ' + params.id : mt[1];
@@ -920,9 +924,9 @@ Views.landing = function () {
     '</div>' +
     '<div class="hero-media"><div class="hero-phones">' +
     '<div class="phone-card"><div class="pc-top">' + UI.avatar({ name: 'Sara', color: '#7c3aed', verified: false }) + '<div><div style="font-weight:700">Your AC repair</div><div style="color:var(--muted)">Receiving offers</div></div>' + '<span class="badge b-amber" style="margin-left:auto">' + ic('clock', { s: 12 }) + ' 3 offers</span></div>' +
-    '<div class="pc-job">' + ic('snow', { s: 18, style: 'color:#0e7a6e' }) + '<div style="font-size:12.5px"><b>AC running but not cooling</b><br><span style="color:var(--muted)">Gulshan-e-Iqbal · Today 4:00 PM</span></div></div>' +
+    '<div class="pc-job">' + ic('snow', { s: 18, style: 'color:#123b5d' }) + '<div style="font-size:12.5px"><b>AC running but not cooling</b><br><span style="color:var(--muted)">Gulshan-e-Iqbal · Today 4:00 PM</span></div></div>' +
     '<div style="display:flex;gap:8px"><div class="prog" style="flex:1"><i style="width:64%"></i></div><span style="font-size:11px;color:var(--muted)">Inspection</span></div></div>' +
-    '<div class="phone-card"><div class="pc-top">' + UI.avatar({ name: 'Ali', color: '#0e7a6e', verified: true }) + '<div><div style="font-weight:700">Ali Khan</div><div style="color:var(--muted)">AC Technician</div></div><div class="rating" style="margin-left:auto">' + UI.stars(4.9, 13) + '</div></div>' +
+    '<div class="phone-card"><div class="pc-top">' + UI.avatar({ name: 'Ali', color: '#123b5d', verified: true }) + '<div><div style="font-weight:700">Ali Khan</div><div style="color:var(--muted)">AC Technician</div></div><div class="rating" style="margin-left:auto">' + UI.stars(4.9, 13) + '</div></div>' +
     '<div style="display:flex;gap:10px;align-items:center"><div class="voice-chip" style="margin:0">' + ic('mic', { s: 12 }) + ' Voice note</div><span class="badge b-ok">' + ic('check', { s: 11 }) + ' Approved</span></div><div class="kv" style="border-bottom:none;padding:6px 0 0"><span class="k">Visit charge</span><span class="v">Rs. 300</span></div></div>' +
     '</div>' +
     '<div class="float-chip fc-1"><span class="dot"></span> Ali accepted<br>your job · Rs. 300</div>' +
@@ -939,13 +943,76 @@ Views.landing = function () {
     '<section class="section"><div class="content">' +
     '<div class="sec-head"><div><div class="section-title">Meet top-rated workers</div><div class="section-sub">Verified skills, real reviews, upfront visit charges.</div></div><a class="btn btn-outline btn-sm" href="#/workers">Browse all</a></div>' +
     '<div class="dir-grid">' + demoW.map(function (w) { return UI.workerCard(w); }).join('') + '</div></div></section>' +
-    '<section class="section" style="background:linear-gradient(135deg,#0f1f26,#16333d);color:#fff"><div class="content" style="display:flex;gap:30px;align-items:center;justify-content:space-between;flex-wrap:wrap">' +
+    '<section class="section" style="background:linear-gradient(135deg,#102f4a,#123b5d);color:#fff"><div class="content" style="display:flex;gap:30px;align-items:center;justify-content:space-between;flex-wrap:wrap">' +
     '<div><div style="font-size:26px;font-weight:800;letter-spacing:-.02em">Need it fixed today?</div><p style="color:#a7bdc7;margin-top:6px">Post a job in 2 minutes and nearby workers will send you offers.</p></div>' +
-    '<a class="btn btn-primary btn-lg" href="#/register" style="background:#fff;color:#0f1f26">Post Your Problem</a></div></section>';
+    '<a class="btn btn-primary btn-lg" href="#/register" style="background:#fff;color:#123b5d">Post Your Problem</a></div></section>';
 
   return { html: html + mid, mount: function () {
       document.getElementById('hero-cat').addEventListener('change', function () { });
     } };
+};
+
+Views.colors = function () {
+  const swatch = function (name, hex, extra) {
+    return '<div style="display:inline-flex;flex-direction:column;gap:6px;align-items:center;min-width:88px">' +
+      '<span style="width:54px;height:54px;border-radius:14px;background:' + hex + (extra || '') + '"></span>' +
+      '<b style="font-size:11.5px;color:var(--navy)">' + name + '</b>' +
+      '<span style="font-size:11px;color:var(--muted)">' + hex + '</span></div>';
+  };
+  const card = function (title, sub, inner) {
+    return '<div class="card" style="padding:20px;margin-bottom:16px"><div style="font-weight:800;font-size:16px;color:var(--navy)">' + title + '</div>' +
+      '<div style="color:var(--muted);font-size:13px;margin:2px 0 14px">' + sub + '</div>' + inner + '</div>';
+  };
+
+  const html =
+    '<section class="section"><div class="content" style="max-width:880px">' +
+    '<div style="font-size:clamp(26px,3vw,34px);font-weight:800;color:var(--navy);letter-spacing:-.02em">HUNAR Button & Color Reference</div>' +
+    '<p style="color:var(--muted);margin:6px 0 26px">The 9 core colors and every button style from colors.md, live.</p>' +
+
+    card('Palette', 'The color system behind the whole UI.',
+      '<div style="display:flex;gap:16px;flex-wrap:wrap">' +
+      swatch('Navy', '#123B5D') + swatch('Teal', '#0F8B8D') + swatch('Orange', '#F59E0B') +
+      swatch('Background', '#F8FAFC', ';border:1.5px solid var(--line-2)') +
+      swatch('White', '#FFFFFF', ';border:1.5px solid var(--line-2)') +
+      swatch('Dark', '#172033') + swatch('Gray', '#64748B') +
+      swatch('Success', '#16A34A') + swatch('Error', '#DC2626') +
+      '</div>') +
+
+    card('Action buttons', 'Teal = action & trust. Every main CTA in HUNAR.',
+      '<div class="stack" style="gap:10px">' +
+      '<div><div class="btn btn-primary">' + ic('plus', { s: 16 }) + ' Post a Job</div></div>' +
+      '<div><div class="btn btn-primary btn-lg">' + ic('check', { s: 16 }) + ' Accept Offer</div></div>' +
+      '<div><div class="btn btn-primary btn-sm">Approve Repair</div> <div class="btn btn-primary btn-sm">Pay Rs. 0</div></div>' +
+      '<div style="padding:12px 18px;border-radius:12px;display:inline-flex;gap:8px;align-items:center;font-weight:600;color:#fff;background:#0f8b8d">Solid teal #0F8B8D</div>' +
+      '</div>') +
+
+    card('Secondary & outline', 'White + navy border = calm, trust-based options.',
+      '<div class="stack" style="gap:10px">' +
+      '<div><div class="btn btn-outline">Become a Worker</div> <div class="btn btn-outline btn-sm">View All</div></div>' +
+      '<div><div class="btn btn-soft">' + ic('shield', { s: 15 }) + ' Verified</div> <div class="btn btn-ghost">Ghost / nav link</div></div>' +
+      '</div>') +
+
+    card('Status & semantic colors', 'Orange draws the eye, green means done, red is a problem.',
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' +
+      '<span class="badge b-amber">' + ic('clock', { s: 12 }) + ' Pending offer</span>' +
+      '<span class="badge b-brand">' + ic('shield', { s: 12 }) + ' Verified</span>' +
+      '<span class="badge b-ok">' + ic('check', { s: 12 }) + ' Completed</span>' +
+      '<span class="badge b-danger">' + ic('x', { s: 12 }) + ' Cancelled</span>' +
+      '<div class="btn btn-danger">Reject</div>' +
+      '<div class="btn btn-danger-solid">Cancel Job</div>' +
+      '<div class="btn btn-amber">Offer highlight</div>' +
+      '</div>') +
+
+    card('Quick rule (colors.md)', 'The whole identity in one line.',
+      '<div style="color:var(--ink);font-size:13.5px;line-height:1.9">' +
+      'Navy <b style="color:#123b5d">#123B5D</b> = trust → logo, headings, numbers, prices<br>' +
+      'Teal <b style="color:#0f8b8d">#0F8B8D</b> = action → buttons, accept, pay, verified<br>' +
+      'Orange <b style="color:#f59e0b">#F59E0B</b> = attention → ratings, offers, pending<br>' +
+      'Green <b style="color:#16a34a">#16A34A</b> = success → completed, approved, online<br>' +
+      'Red <b style="color:#dc2626">#DC2626</b> = problem → errors, cancelled, rejected</div>') +
+    '</div></section>';
+
+  return { html: html };
 };
 
 A.heroSearch = function () {
@@ -1128,7 +1195,7 @@ Views.customerDashboard = function () {
   }).join('') : '<p class="smallnote" style="padding:8px 4px">Completed services will show up here.</p>';
 
   const html =
-    '<button class="btn btn-primary btn-lg" style="width:100%;margin-bottom:20px" onclick="go(\'/customer/post\')">' + ic('plus', { s: 18 }) + ' Post a Job</button>' +
+    '<button class="btn btn-primary btn-lg" style="max-width:280px;width:100%;margin-bottom:20px" onclick="go(\'/customer/post\')">' + ic('plus', { s: 18 }) + ' Post a Job</button>' +
     statRow +
     '<div class="grid-2col" style="margin-top:20px">' +
     '<div class="stack"><div class="card card-h"><div><h3>Active Jobs</h3><p>Track every stage of your repairs</p></div><a class="btn btn-outline btn-sm" href="#/customer/jobs">View all</a></div>' + activeHtml + '</div>' +
@@ -1322,7 +1389,7 @@ Views.wizard = function () {
   }).join('') + '</div>';
 
   const svcStep = '<div class="wiz-svc-step">' + SERVICES.map(function (s) {
-    return '<button class="svc-card" style="' + (d.category === s.name ? 'border-color:var(--brand);background:var(--brand-3);box-shadow:0 0 0 3px rgba(14,122,110,.15)' : '') + '" onclick="A.wiz.pickService(\'' + s.name + '\')"><span class="svc-icon" style="background:' + s.bg + ';color:' + s.css + '">' + ic(s.icon, { s: 22 }) + '</span><span><h4>' + s.name + '</h4><p>' + s.desc + '</p></span></button>';
+    return '<button class="svc-card" style="' + (d.category === s.name ? 'border-color:var(--brand);background:var(--brand-3);box-shadow:0 0 0 3px rgba(15,139,141,.15)' : '') + '" onclick="A.wiz.pickService(\'' + s.name + '\')"><span class="svc-icon" style="background:' + s.bg + ';color:' + s.css + '">' + ic(s.icon, { s: 22 }) + '</span><span><h4>' + s.name + '</h4><p>' + s.desc + '</p></span></button>';
   }).join('') + '</div>';
 
   const problemStep = '<div class="field"><label>Problem title <span class="req">*</span></label>' +
@@ -1826,7 +1893,7 @@ Views.workerOnboarding = function () {
   if (!u.onboarding) { go('/worker'); return { html: '' }; }
   let onb = Store.draft();
   if (!onb || !onb.onb) {
-    onb = { onb: true, step: 1, tagline: '', bio: '', phone: u.phone || '', skills: u.skills || [], areas: u.serviceAreas || [], years: u.years || 0, hi: '', avatar: '', avatarColor: u.color || '#0e7a6e', cnic: null, selfie: null, cnicDone: false };
+    onb = { onb: true, step: 1, tagline: '', bio: '', phone: u.phone || '', skills: u.skills || [], areas: u.serviceAreas || [], years: u.years || 0, hi: '', avatar: '', avatarColor: u.color || '#123b5d', cnic: null, selfie: null, cnicDone: false };
     Store.setDraft(onb);
   }
   const d = onb;
